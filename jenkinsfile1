@@ -1,6 +1,9 @@
 node{
 def mavenHome = tool name: "maven 3.8.5"
 properties([buildDiscarder(logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '5', daysToKeepStr: '', numToKeepStr: '5', removeLastBuild: true)), pipelineTriggers([pollSCM('* * * * *')])])
+echo "Job name is:${env.JOB_NAME}"
+echo "Node name is:${env.NODE_NAME}"
+echo "Build number is:${env.BUILD_NUMBER}"
 stage('Checkout code')
 {git credentialsId: 'fe666ce9-24cc-474f-94b4-6611924253c9', url: 'https://github.com/edrishgit/maven-web-application.git'       
 }
@@ -8,7 +11,7 @@ stage('Build')
  {
  sh "${mavenHome}/bin/mvn clean package"
  }
-/*stage('Execute SonarQube Report')
+ stage('Execute SonarQube Report')
   {
    sh "${mavenHome}/bin/mvn sonar:sonar"
   }
@@ -21,5 +24,5 @@ stage('Build')
        sshagent(['cf06bc14-82eb-44f9-b0ef-e4cf7e77345e']) {
         sh "scp -oStrictHostKeyChecking=no target/maven-web-application.war ubuntu@172.31.34.77:/opt/apache-tomcat-9.0.108/webapps"
          }
-     }*/
+     }
 }
