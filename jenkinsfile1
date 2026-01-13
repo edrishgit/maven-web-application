@@ -4,6 +4,7 @@ properties([buildDiscarder(logRotator(artifactDaysToKeepStr: '', artifactNumToKe
 echo "Job name is:${env.JOB_NAME}"
 echo "Node name is:${env.NODE_NAME}"
 echo "Build number is:${env.BUILD_NUMBER}"
+try{
 stage('Checkout code')
 {git credentialsId: 'fe666ce9-24cc-474f-94b4-6611924253c9', url: 'https://github.com/edrishgit/maven-web-application.git'       
 }
@@ -25,4 +26,39 @@ stage('Build')
         sh "scp -oStrictHostKeyChecking=no target/maven-web-application.war ubuntu@172.31.34.77:/opt/apache-tomcat-9.0.108/webapps"
          }
      }
+ } 
+catch (e) {
+    // If there was an exception thrown, the build failed
+    currentBuild.result = "FAILED"
+    throw e
+  } finally {
+    // Success or failure, always send notifications
+    notifyBuild(currentBuild.result)
+  }
+}
+//Before (OR) After the pipeline scripit we use this 
+def notifyBuild(String buildStatus = 'STARTED') {
+  // build status of null means successful
+  buildStatus =  buildStatus ?: 'SUCCESSFUL'
+
+  // Default values
+  def colorName = 'RED'
+  def colorCode = '#FF0000'
+  def subject = "${buildStatus}: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]'"
+  def summary = "${subject} (${env.BUILD_URL})"
+
+  // Override default values based on build status
+  if (buildStatus == 'STARTED') {
+    color = 'YELLOW'
+    colorCode = '#FFFF00'
+  } else if (buildStatus == 'SUCCESSFUL') {
+    color = 'GREEN'
+    colorCode = '#00FF00'
+  } else {
+    color = 'RED'
+    colorCode = '#FF0000'
+  }
+
+  // Send notifications
+  slackSend (color: colorCode, message: summary)
 }
