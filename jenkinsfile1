@@ -1,3 +1,4 @@
+@Library('slacksharedlibrary') _
 node{
 def mavenHome = tool name: "maven 3.8.5"
 properties([buildDiscarder(logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '5', daysToKeepStr: '', numToKeepStr: '5', removeLastBuild: true)), pipelineTriggers([pollSCM('* * * * *')])])
@@ -5,7 +6,7 @@ echo "Job name is:${env.JOB_NAME}"
 echo "Node name is:${env.NODE_NAME}"
 echo "Build number is:${env.BUILD_NUMBER}"
 try{
-notifyBuild('STARTED')
+slack('STARTED')
 stage('Checkout code')
 {git credentialsId: 'fe666ce9-24cc-474f-94b4-6611924253c9', url: 'https://github.com/edrishgit/maven-web-application.git'       
 }
@@ -34,32 +35,6 @@ catch (e) {
     throw e
   } finally {
     // Success or failure, always send notifications
-    notifyBuild(currentBuild.result)
+    slack(currentBuild.result)
   }
-}
-//Before (OR) After the pipeline scripit we use this 
-def notifyBuild(String buildStatus = 'STARTED') {
-  // build status of null means successful
-  buildStatus =  buildStatus ?: 'SUCCESSFUL'
-
-  // Default values
-  def colorName = 'RED'
-  def colorCode = '#FF0000'
-  def subject = "${buildStatus}: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]'"
-  def summary = "${subject} (${env.BUILD_URL})"
-
-  // Override default values based on build status
-  if (buildStatus == 'STARTED') {
-    color = 'YELLOW'
-    colorCode = '#FFFF00'
-  } else if (buildStatus == 'SUCCESSFUL') {
-    color = 'GREEN'
-    colorCode = '#00FF00'
-  } else {
-    color = 'RED'
-    colorCode = '#FF0000'
-  }
-
-  // Send notifications
-  slackSend (color: colorCode, message: summary)
 }
